@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Student Handbook RAG</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .typewriter-container {
+      display: inline-block;
+      overflow: hidden;
+      border-right: 2px solid rgba(255, 255, 255, 0.5);
+      white-space: nowrap;
+      animation: typing 3s steps(30, end), blink 0.75s step-end infinite;
+      max-width: 100%;
+    }
+    @keyframes typing {
+      from { width: 0 }
+      to { width: 100% }
+    }
+    @keyframes blink {
+      50% { border-color: transparent }
+    }
+  </style>
+</head>
+
+<body class="bg-zinc-900 text-white h-screen overflow-hidden">
+
+  <!-- Background canvas -->
+  <canvas id="constellation" class="fixed top-0 left-0 w-full h-full z-0"></canvas>
+
+  <!-- Main content -->
+  <div class="relative z-10 flex flex-col justify-center items-center h-full">
+    <h1 class="text-2xl md:text-3xl font-semibold mb-10 text-center">
+      <span class="typewriter-container">Ask the Student Handbook</span>
+    </h1>
+
+    <form id="questionForm" class="w-full max-w-2xl px-4">
+      <div class="bg-zinc-800 rounded-full flex items-center px-4 py-3 gap-2 shadow-lg">
+        <input
+          name="query"
+          placeholder="Ask anything"
+          class="bg-transparent outline-none text-white flex-1 placeholder:text-zinc-400 px-2 py-1"
+          required
+          autofocus
+        />
+        <button type="submit" class="text-white bg-blue-600 rounded-full px-4 py-2 hover:bg-blue-700 transition">Ask</button>
+      </div>
+    </form>
+
+    <div id="answerContainer" class="mt-10 max-w-2xl w-full px-4 hidden">
+      <div class="bg-zinc-800 rounded-xl p-6 shadow-lg">
+        <p id="answerText" class="text-zinc-200 leading-relaxed whitespace-pre-wrap"></p>
+      </div>
+    </div>
+
+    <footer class="absolute bottom-4 w-full text-center text-sm text-zinc-500">
+      Created by Taha Faisal Khan
+    </footer>
+  </div>
+
+  <!-- Constellation background script -->
+  <script>
+    const canvas = document.getElementById("constellation");
+    const ctx = canvas.getContext("2d");
+    let width, height, stars = [];
+
+    function resize() {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    }
+    window.addEventListener("resize", resize);
+    resize();
+
+    function createStars(count) {
+      stars = [];
+      for (let i = 0; i < count; i++) {
+        stars.push({
+          x: Math.random() * width,
+          y: Math.random() * height,
+          vx: (Math.random() - 0.5) * 0.5,
+          vy: (Math.random() - 0.5) * 0.5
+        });
+      }
+    }
+
+    function drawStars() {
+      ctx.clearRect(0, 0, width, height);
+      for (let i = 0; i < stars.length; i++) {
+        const star = stars[i];
+        ctx.beginPath();
+        ctx.arc(star.x, star.y, 1.2, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(255,255,255,0.6)";
+        ctx.fill();
+
+        for (let j = i + 1; j < stars.length; j++) {
+          const other = stars[j];
+          const dx = star.x - other.x;
+          const dy = star.y - other.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < 100) {
+            ctx.beginPath();
+            ctx.moveTo(star.x, star.y);
+            ctx.lineTo(other.x, other.y);
+            ctx.strokeStyle = "rgba(255,255,255,0.05)";
+            ctx.stroke();
+          }
+        }
+
+        star.x += star.vx;
+        star.y += star.vy;
+        if (star.x < 0 || star.x > width) star.vx *= -1;
+        if (star.y < 0 || star.y > height) star.vy *= -1;
+      }
+    }
+
+    createStars(100);
+    function animate() {
+      drawStars();
+      requestAnimationFrame(animate);
+    }
+    animate();
+  </script>
+
+  <!-- Dynamic answer script with typing animation -->
+  <script>
+    function typeText(element, text, speed = 20) {
+      element.textContent = '';
+      let i = 0;
+      const interval = setInterval(() => {
+        element.textContent += text.charAt(i);
+        i++;
+        if (i >= text.length) clearInterval(interval);
+      }, speed);
+    }
+
+    document.getElementById('questionForm').addEventListener('submit', async function (e) {
+      e.preventDefault();
+      const input = document.querySelector('input[name="query"]');
+      const query = input.value.trim();
+      if (!query) return;
+
+      const res = await fetch('/ask', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query })
+      });
+
+      const data = await res.json();
+      const answerEl = document.getElementById('answerText');
+      document.getElementById('answerContainer').classList.remove('hidden');
+      typeText(answerEl, data.answer);
+      input.value = '';
+    });
+  </script>
+
+</body>
+</html>

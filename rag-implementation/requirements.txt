@@ -1,0 +1,6 @@
+langchain>=0.1.14
+langchain-community>=0.0.21
+sentence-transformers>=2.2.2
+faiss-cpu>=1.7.4
+pymupdf>=1.22.5
+huggingface-hub>=0.20.3
